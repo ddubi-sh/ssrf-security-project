@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinkLens</title>
+  <meta name="description" content="팀의 링크를 한곳에 모아 저장하고, 미리보기하고, 형식을 확인하세요." />
+  <!-- 외부 CDN / 외부 폰트 / 외부 스크립트를 사용하지 않습니다. 로컬 정적 파일만 사용합니다. -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container">
+      <a class="logo" href="/">
+        <span class="logo-mark" aria-hidden="true"></span>
+        <span class="logo-text">LinkLens</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <section class="intro">
+      <h1>링크를 한곳에 모으세요</h1>
+      <p class="tagline">자주 쓰는 링크를 저장하고, 열기 전에 미리보기하고, 등록 전 형식을 확인하세요.</p>
+    </section>
+
+    <!-- ================================================================
+         기능 1 : 링크 미리보기
+         요청: POST /preview  (JSON 본문 {"url": ...})
+         ================================================================ -->
+    <section class="card">
+      <h2 class="card-title">링크 미리보기</h2>
+      <p class="card-hint">링크를 열기 전에, 그 주소의 내용을 미리 확인합니다.</p>
+      <form id="preview-form" autocomplete="off" novalidate>
+        <label class="field-label" for="url-input">URL</label>
+        <div class="input-row">
+          <input
+            id="url-input"
+            name="url"
+            type="text"
+            spellcheck="false"
+            placeholder=""
+          />
+          <button type="submit" id="preview-button" class="btn-primary">미리보기</button>
+        </div>
+      </form>
+
+      <div id="loading" class="loading" role="status" aria-live="polite" hidden>
+        <span class="spinner" aria-hidden="true"></span>
+        <span>미리보기 불러오는 중…</span>
+      </div>
+
+      <p id="error-message" class="error-message" role="alert" hidden></p>
+
+      <div id="result-card" class="result-card" hidden>
+        <div class="preview-head">
+          <span class="preview-title" id="result-title" hidden></span>
+          <span class="preview-url" id="result-url"></span>
+        </div>
+        <!-- 응답은 항상 textContent 로만 넣습니다. innerHTML 을 사용하지 않습니다. -->
+        <pre id="result-body" class="preview-content"></pre>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         기능 2 : 저장된 링크 상세 보기
+         요청: GET /api/links  (목록) → GET /api/links/<id>  (상세)
+         저장 당시 스냅샷만 돌려줍니다.
+         ================================================================ -->
+    <section class="card">
+      <h2 class="card-title">저장된 링크</h2>
+      <p class="card-hint">저장해 둔 링크를 눌러 저장 당시의 정보를 확인합니다.</p>
+
+      <ul id="saved-links" class="saved-list" aria-live="polite"></ul>
+      <p id="saved-error" class="error-message" role="alert" hidden></p>
+
+      <div id="saved-detail" class="detail-box" hidden>
+        <div class="detail-row"><span class="meta-label">제목</span><span class="meta-value" id="detail-title"></span></div>
+        <div class="detail-row"><span class="meta-label">URL</span><span class="meta-value" id="detail-url"></span></div>
+        <div class="detail-row"><span class="meta-label">설명</span><span class="meta-value" id="detail-description"></span></div>
+        <div class="detail-row"><span class="meta-label">저장 시각</span><span class="meta-value" id="detail-saved-at"></span></div>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         기능 3 : URL 형식 확인
+         요청: POST /api/url-check  (JSON 본문 {"url": ...})
+         서버는 요청을 보내지 않고 형식만 분해합니다.
+         ================================================================ -->
+    <section class="card">
+      <h2 class="card-title">URL 형식 확인</h2>
+      <p class="card-hint">링크로 등록하기 전에 URL 형식을 확인합니다.</p>
+
+      <form id="check-form" autocomplete="off" novalidate>
+        <label class="field-label" for="check-input">URL</label>
+        <div class="input-row">
+          <input
+            id="check-input"
+            name="url"
+            type="text"
+            spellcheck="false"
+            placeholder="https://example.com/path"
+          />
+          <button type="submit" id="check-button" class="btn-primary">확인</button>
+        </div>
+      </form>
+
+      <p id="check-error" class="error-message" role="alert" hidden></p>
+
+      <div id="check-result" class="detail-box" hidden>
+        <div class="detail-row"><span class="meta-label">형식 유효</span><span class="meta-value" id="check-valid"></span></div>
+        <div class="detail-row"><span class="meta-label">프로토콜</span><span class="meta-value" id="check-scheme"></span></div>
+        <div class="detail-row"><span class="meta-label">호스트</span><span class="meta-value" id="check-host"></span></div>
+        <div class="detail-row"><span class="meta-label">포트</span><span class="meta-value" id="check-port"></span></div>
+        <div class="detail-row"><span class="meta-label">경로</span><span class="meta-value" id="check-path"></span></div>
+        <div class="detail-row"><span class="meta-label">문제</span><span class="meta-value" id="check-problems"></span></div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; LinkLens</p>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
